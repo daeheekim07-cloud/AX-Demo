@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>색조 신제품 AX 분석 시스템</title>
+<style>
+  :root{
+    --bg:#1b1013; --bg2:#241519; --card:#2b1a20; --card2:#341f27; --line:#4a323a;
+    --berry:#6D2E46; --rose:#A4596B; --rose-soft:#C98B97; --gold:#BD8A3D; --gold-soft:#dab26b;
+    --text:#F3E7EB; --muted:#B79AA3; --ok:#6BBF8A; --warn:#D98A6B;
+    --radius:16px; --shadow:0 8px 28px rgba(0,0,0,.35);
+    --font:'Pretendard','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Malgun Gothic','맑은 고딕',sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:radial-gradient(120% 80% at 80% -10%,#3a1d2a 0%,var(--bg) 55%);
+    color:var(--text);font-family:var(--font);line-height:1.5;padding:0 0 60px}
+  .wrap{max-width:960px;margin:0 auto;padding:22px 16px}
+  .swatch{display:inline-flex;gap:6px;vertical-align:middle}
+  .swatch i{width:12px;height:12px;border-radius:50%;display:inline-block}
+
+  /* header */
+  header h1{font-size:26px;font-weight:800;margin:0 0 4px;letter-spacing:-.02em}
+  header .eyebrow{font-size:12px;font-weight:700;letter-spacing:.22em;color:var(--rose-soft);margin:0 0 10px}
+  header p.sub{color:var(--muted);margin:8px 0 0;font-size:14px}
+  .disclaimer{margin:16px 0 0;background:rgba(189,138,61,.12);border:1px solid rgba(189,138,61,.35);
+    color:var(--gold-soft);font-size:12.5px;padding:9px 13px;border-radius:10px}
+
+  /* panels */
+  .panel{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin-top:18px;box-shadow:var(--shadow)}
+  .panel h2{font-size:13px;font-weight:800;letter-spacing:.12em;color:var(--rose-soft);
+    margin:0 0 14px;text-transform:uppercase}
+  label.fld{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+  label.fld:first-of-type{margin-top:0}
+  select{width:100%;appearance:none;background:var(--card);color:var(--text);border:1px solid var(--line);
+    border-radius:12px;padding:15px 44px 15px 16px;font-size:16px;font-family:inherit;font-weight:600;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23C98B97' stroke-width='2'><path d='M6 8l4 4 4-4'/><path d='M6 12l4-4 4 4'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center}
+  select:focus{outline:2px solid var(--gold);outline-offset:1px}
+  .runbtn{width:100%;margin-top:20px;border:0;border-radius:13px;padding:17px;font-size:17px;font-weight:800;
+    font-family:inherit;color:#2a1206;cursor:pointer;background:linear-gradient(180deg,var(--gold-soft),var(--gold));
+    box-shadow:0 6px 18px rgba(189,138,61,.35);transition:transform .1s,filter .15s}
+  .runbtn:hover{filter:brightness(1.05)}
+  .runbtn:active{transform:scale(.985)}
+  .runbtn[disabled]{opacity:.6;cursor:progress}
+
+  /* channels */
+  .chan-title{margin:26px 2px 12px;font-size:20px;font-weight:800}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:620px){.grid{grid-template-columns:1fr 1fr}}
+  .chan{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 14px;
+    transition:border-color .3s,background .3s,transform .3s}
+  .chan .cn{font-size:17px;font-weight:800;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+  .chan .cn .dot{width:9px;height:9px;border-radius:50%;background:var(--line);transition:background .3s,box-shadow .3s}
+  .chan .cd{font-size:13px;color:var(--rose-soft);margin:0 0 8px}
+  .chan .cr{font-size:12px;color:var(--muted);margin:0}
+  .chan.active{border-color:var(--gold);background:var(--card2);transform:translateY(-2px)}
+  .chan.active .dot{background:var(--gold);box-shadow:0 0 0 4px rgba(189,138,61,.2)}
+
+  /* results */
+  #results{margin-top:26px;display:none}
+  #results.show{display:block;animation:fade .5s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .pipe{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .step{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px;display:flex;align-items:center;gap:11px;transition:.3s;opacity:.5}
+  .step .ic{width:30px;height:30px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+    background:var(--berry);font-size:15px}
+  .step b{display:block;font-size:14px}
+  .step small{color:var(--muted);font-size:11.5px}
+  .step.done{opacity:1;border-color:var(--rose)}
+  .step.done .ic{background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#2a1206}
+
+  .cardgrid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:720px){.cardgrid{grid-template-columns:1fr 1fr}}
+  .rc{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+  .rc h3{margin:0 0 14px;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .rc h3 .tag{font-size:11px;color:var(--muted);font-weight:600}
+
+  .bar{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+  .bar .nm{flex:0 0 40%;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar .track{flex:1;height:9px;background:var(--card);border-radius:6px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--berry),var(--rose));width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+  .bar .vl{flex:0 0 auto;color:var(--muted);font-size:12px;min-width:74px;text-align:right}
+
+  .price-row{display:flex;gap:6px;margin-top:6px}
+  .price-row .pb{flex:1;text-align:center;background:var(--card);border-radius:9px;padding:9px 4px}
+  .price-row .pb.hi{background:linear-gradient(180deg,var(--berry),#54223a);border:1px solid var(--rose)}
+  .price-row .pb b{display:block;font-size:15px}
+  .price-row .pb small{font-size:10.5px;color:var(--muted)}
+
+  .voc{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .voc h4{margin:0 0 8px;font-size:13px;font-weight:800}
+  .voc .love h4{color:var(--ok)} .voc .hate h4{color:var(--warn)}
+  .voc ul{margin:0;padding:0;list-style:none}
+  .voc li{font-size:12.5px;color:var(--text);padding:6px 0 6px 18px;position:relative;border-top:1px solid var(--line)}
+  .voc li:first-child{border-top:0}
+  .voc .love li::before{content:"＋";position:absolute;left:0;color:var(--ok);font-weight:800}
+  .voc .hate li::before{content:"－";position:absolute;left:0;color:var(--warn);font-weight:800}
+
+  .tags{display:flex;flex-wrap:wrap;gap:8px}
+  .tags span{background:var(--card);border:1px solid var(--line);color:var(--rose-soft);
+    padding:7px 12px;border-radius:20px;font-size:12.5px;font-weight:600}
+
+  /* AI proposal hero */
+  .hero{margin-top:16px;background:linear-gradient(155deg,#33202a,#241519);
+    border:1.5px solid var(--gold);border-radius:20px;padding:22px;box-shadow:0 10px 34px rgba(0,0,0,.45)}
+  .hero .htop{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .hero .kick{font-size:11px;letter-spacing:.2em;color:var(--gold-soft);font-weight:800;margin:0 0 6px}
+  .hero .concept{font-size:21px;font-weight:800;margin:0;letter-spacing:-.01em;max-width:560px}
+  .ring{flex:0 0 auto;text-align:center}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .lbl{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .hero .sec{margin-top:16px}
+  .hero .sec .st{font-size:12px;font-weight:800;color:var(--rose-soft);letter-spacing:.08em;margin:0 0 7px}
+  .hero ul.spec{margin:0;padding:0;list-style:none}
+  .hero ul.spec li{font-size:13.5px;padding:5px 0 5px 20px;position:relative}
+  .hero ul.spec li::before{content:"◆";position:absolute;left:0;color:var(--gold);font-size:10px;top:7px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chips span{background:rgba(164,89,107,.22);border:1px solid var(--rose);border-radius:8px;
+    padding:6px 11px;font-size:12.5px;font-weight:600;color:var(--text)}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+  @media(min-width:560px){.kv{grid-template-columns:repeat(4,1fr)}}
+  .kv .box{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .kv .box small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}
+  .kv .box b{font-size:17px}
+  .diff{margin-top:16px;background:rgba(189,138,61,.1);border-left:3px solid var(--gold);
+    border-radius:8px;padding:12px 14px;font-size:13px}
+  .diff b{color:var(--gold-soft)}
+  .mfg{margin-top:12px;font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:flex-start}
+  .mfg .ic{color:var(--rose-soft)}
+
+  footer{max-width:960px;margin:30px auto 0;padding:0 16px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">COLOR COSMETICS · AX SYSTEM</p>
+    <h1>색조 신제품 AX 분석 시스템</h1>
+    <div class="swatch" style="margin-top:8px">
+      <i style="background:#6D2E46"></i><i style="background:#A4596B"></i>
+      <i style="background:#BD8A3D"></i><i style="background:#C98B97"></i>
+    </div>
+    <p class="sub">판매 데이터로 시장성을, 리뷰 데이터로 소비자 요구를 분석하고 ODM·사내 데이터를 결합해 AI가 신제품 요구사양을 제안합니다.</p>
+    <div class="disclaimer">⚠️ 모든 수치는 <b>시연용 가상 데이터</b>입니다. 실데이터 연결 시 같은 폴더의 <code>data.json</code>으로 교체하면 자동 반영됩니다.</div>
+  </header>
+
+  <!-- 분석 조건 -->
+  <section class="panel" aria-label="분석 조건">
+    <h2>분석 조건</h2>
+    <label class="fld" for="cat">제품군</label>
+    <select id="cat"></select>
+    <label class="fld" for="mkt">타깃 시장</label>
+    <select id="mkt">
+      <option value="국내">국내</option>
+      <option value="북미">북미 (Amazon)</option>
+      <option value="일본">일본 (Qoo10 / @cosme)</option>
+    </select>
+    <label class="fld" for="price">목표 가격대</label>
+    <select id="price">
+      <option value="0">~ 10,000원</option>
+      <option value="1">10,000 ~ 15,000원</option>
+      <option value="2" selected>15,000 ~ 20,000원</option>
+      <option value="3">20,000 ~ 30,000원</option>
+    </select>
+    <button class="runbtn" id="run">AX 분석 실행</button>
+  </section>
+
+  <!-- 데이터 수집 채널 -->
+  <h2 class="chan-title">데이터 수집 채널</h2>
+  <div class="grid" id="channels"></div>
+
+  <!-- 결과 -->
+  <section id="results" aria-live="polite">
+    <div class="pipe" id="pipe"></div>
+    <div class="cardgrid">
+      <div class="rc">
+        <h3>① 시장성 분석 <span class="tag">판매 데이터 · 올리브영/쿠팡/Amazon</span></h3>
+        <div id="market"></div>
+        <div style="margin-top:14px;font-size:12px;color:var(--muted)">가격대 분포 (상위 판매 제품 기준)</div>
+        <div class="price-row" id="pricedist"></div>
+      </div>
+      <div class="rc">
+        <h3>② 소비자 요구 분석 <span class="tag">리뷰·VOC · 화해/@cosme</span></h3>
+        <div class="voc">
+          <div class="love"><h4>좋아하는 점</h4><ul id="love"></ul></div>
+          <div class="hate"><h4>불만·개선점</h4><ul id="hate"></ul></div>
+        </div>
+        <div style="margin-top:16px;font-size:12px;color:var(--muted);margin-bottom:8px">트렌드 키워드</div>
+        <div class="tags" id="tags"></div>
+      </div>
+    </div>
+
+    <!-- AI 제안 -->
+    <div class="hero" id="hero">
+      <div class="htop">
+        <div>
+          <p class="kick">③ AI 신제품 요구사양 제안</p>
+          <p class="concept" id="concept"></p>
+        </div>
+        <div class="ring">
+          <svg width="82" height="82" viewBox="0 0 82 82">
+            <circle cx="41" cy="41" r="35" fill="none" stroke="#4a323a" stroke-width="8"/>
+            <circle id="ringfill" cx="41" cy="41" r="35" fill="none" stroke="#BD8A3D" stroke-width="8"
+              stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220"/>
+            <text x="41" y="41" transform="rotate(90 41 41)" text-anchor="middle" dominant-baseline="central"
+              fill="#F3E7EB" font-size="20" font-weight="800" id="scoretxt">0</text>
+          </svg>
+          <div class="lbl">예상 경쟁력</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <p class="st">핵심 요구사양</p>
+        <ul class="spec" id="specs"></ul>
+      </div>
+      <div class="sec">
+        <p class="st">추천 컬러 구성</p>
+        <div class="chips" id="colors"></div>
+      </div>
+      <div class="kv" id="kv"></div>
+      <div class="diff" id="diff"></div>
+      <div class="mfg" id="mfg"></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  색조 신제품 AX 분석 시스템 · 오픈소스 데모 · 데이터는 시연용 가상값<br>
+  실데이터 연결: 파이썬 수집 파이프라인 → <code>data.json</code> 저장 → 본 화면이 자동 로드
+</footer>
+
+<script>
+/* ---------- 1. 데모 데이터 (실데이터 연결 시 data.json이 이 구조를 대체) ---------- */
+const DEMO = {
+  "립틴트":{
+    top:[["롬앤 쥬시 래스팅 틴트",98,9800,4.7],["페리페라 잉크 무드 글로이 틴트",90,9000,4.6],
+         ["릴리바이레드 무드라이너",84,12000,4.6],["어뮤즈 듀 틴트",76,14000,4.5],["클리오 크리스탈 글램",70,13000,4.4]],
+    price:[["~1만원",52],["1~1.5만",33],["1.5~2만",12],["2만+",3]],
+    love:["높은 발색과 지속력","가볍고 묻어남 적은 텍스처","트렌디한 MLBB·과즙 컬러"],
+    hate:["시간 지나면 건조·각질 부각","이염·묻어남 여전히 불만","비슷한 컬러 피로감"],
+    keywords:["#블러링","#무광벨벳","#과즙톤","#롱래스팅","#보습막"],
+    proposal:{concept:"‘안 건조한 벨벳’ — 보습막 롱래스팅 립틴트",
+      specs:["8시간+ 지속 · 이염 최소화 설계","히알루론산·세라마이드 보습 코팅","무광 벨벳 ~ 새틴 마무리 선택형"],
+      colors:["뉴트럴 MLBB 3종","과즙 코랄·라즈베리 2종","딥 번트레드 1종"],
+      cost:2100, odm:"코스맥스 (색조 벨벳 제형 강점)",
+      diff:"‘지속력 vs 보습’ 트레이드오프를 해소한 보습막 기술로 <b>최다 불만(건조)</b>을 정면 공략",
+      score:86}
+  },
+  "립스틱":{
+    top:[["클리오 매트핏 루즈",92,15000,4.5],["에스쁘아 립스틱 노웨어",85,20000,4.5],
+         ["롬앤 제로 매트 립스틱",80,10000,4.6],["맥 파우더 키스",74,32000,4.4],["3CE 벨벳 립 틴트",68,14000,4.4]],
+    price:[["~1.5만",44],["1.5~2만",30],["2~3만",18],["3만+",8]],
+    love:["고급스러운 발색·질감","케이스 만족도 높음","한 번 발색 커버력"],
+    hate:["건조·각질 부각","묻어남·이염","비슷한 누드톤 과잉"],
+    keywords:["#벨벳매트","#보습새틴","#데일리누드","#고급케이스","#롱웨어"],
+    proposal:{concept:"보습 새틴 롱웨어 립스틱 — 건조 없는 고발색",
+      specs:["오일막 보습 + 매트 발색 양립","입술 결 보정 소프트 포커스 필러","리필형 메탈 케이스(부자재 차별화)"],
+      colors:["MLBB 누드 3종","클래식 레드 2종","뮤트 로즈 1종"],
+      cost:2600, odm:"코스맥스 / 인터코스 (럭셔리 새틴)",
+      diff:"매트의 <b>고발색</b>과 새틴의 <b>보습</b>을 동시 구현해 프리미엄 가격대 정당화",
+      score:83}
+  },
+  "쿠션":{
+    top:[["헤라 블랙 쿠션",95,52000,4.6],["클리오 킬커버 쿠션",90,24000,4.5],
+         ["에스쁘아 프로테일러 쿠션",83,30000,4.5],["라네즈 네오 쿠션",77,33000,4.4],["조선미녀 쿠션",70,26000,4.5]],
+    price:[["~2.5만",35],["2.5~3.5만",40],["3.5~5만",17],["5만+",8]],
+    love:["커버력·톤업","지속력·밀착","마무리 만족"],
+    hate:["시간 지나 무거움·산화","모공·주름 뭉침","여름철 무너짐"],
+    keywords:["#세미매트","#무너짐방지","#산화방지","#모공커버","#글로우"],
+    proposal:{concept:"24시 무너짐 방지 세미매트 쿠션",
+      specs:["산화 억제 코팅 파우더 적용","피지 흡착 + 수분 밸런스 이중막","리필·친환경 케이스 옵션"],
+      colors:["21N / 23N / 25N 기본 3호","쿨·웜 언더톤 대응 2호"],
+      cost:3800, odm:"코스맥스 / 코스메카코리아",
+      diff:"최다 불만(<b>산화·무너짐</b>)을 코팅 파우더로 직접 해결, 지속력 소구",
+      score:88}
+  },
+  "아이섀도":{
+    top:[["클리오 프로 아이 팔레트",94,32000,4.6],["페리페라 올테이크 무드팔레트",86,20000,4.5],
+         ["데이지크 섀도우 팔레트",82,34000,4.6],["어뮤즈 아이 비건 섀도",73,16000,4.4],["립앤 뮤지엄 팔레트",68,25000,4.5]],
+    price:[["~2만",38],["2~3만",34],["3~4만",20],["4만+",8]],
+    love:["발색·지속력","데일리 뉴트럴 구성","펄·글리터 고급감"],
+    hate:["글리터 날림(fallout)","시간 지나 지속력 저하","비슷한 톤 구성"],
+    keywords:["#무날림","#글리터픽스","#데일리뉴트럴","#크림섀도","#원터치발색"],
+    proposal:{concept:"무날림 글리터 픽스 데일리 팔레트",
+      specs:["글리터 밀착 바인더로 fallout 최소화","매트·펄·글리터 밸런스 9구성","크림 섀도 1구 하이브리드 포함"],
+      colors:["뉴트럴 브라운 4구","웜 코랄·번트 3구","글리터 포인트 2구"],
+      cost:4200, odm:"코스맥스 / 코스온",
+      diff:"최다 불만인 <b>글리터 날림</b>을 바인더 기술로 해결한 데일리 팔레트",
+      score:82}
+  },
+  "블러셔":{
+    top:[["롬앤 베러 댄 치크",90,13000,4.6],["힌스 트루 딤 블러셔",85,20000,4.5],
+         ["페리페라 펌킹 치크",80,12000,4.4],["클리오 세미매트 블러셔",72,15000,4.4],["라티튜드 밤 블러셔",66,18000,4.5]],
+    price:[["~1.2만",40],["1.2~1.8만",36],["1.8~2.5만",18],["2.5만+",6]],
+    love:["자연스러운 발색","밀착·지속","멀티 활용(립겸용)"],
+    hate:["가루날림·뭉침","지속력 아쉬움","컬러 선택 어려움"],
+    keywords:["#물광블러셔","#밤타입","#멀티밤","#은은발색","#밀착"],
+    proposal:{concept:"밀착 물광 멀티 블러셔 (립·아이 겸용)",
+      specs:["밤 타입 밀착 제형, 가루날림 0","은은한 물광 마무리","립·아이 겸용 멀티 포지셔닝"],
+      colors:["코랄 2종","로즈 2종","뮤트 브릭 1종"],
+      cost:1900, odm:"코스맥스 (밤·스틱 제형)",
+      diff:"파우더의 <b>날림 불만</b>을 밤 제형으로 해소 + 멀티유즈로 가성비 소구",
+      score:80}
+  },
+  "마스카라":{
+    top:[["클리오 키스 롱래시 마스카라",91,15000,4.5],["에뛰드 컬픽스 마스카라",84,12000,4.5],
+         ["힌스 뮤트 래시 마스카라",78,17000,4.4],["메이블린 래시 센세이셔널",72,14000,4.4],["롬앤 한스텝 마스카라",65,16000,4.5]],
+    price:[["~1.2만",34],["1.2~1.6만",38],["1.6~2만",20],["2만+",8]],
+    love:["컬 유지·볼륨","안 번짐","브러시 사용감"],
+    hate:["번짐·판다눈","떡짐·뭉침","제거 어려움"],
+    keywords:["#스머지프루프","#컬링픽스","#온천물세안","#볼륨","#롱래시"],
+    proposal:{concept:"스머지프루프 컬링 마스카라 — 안 번지고 안 떡지는",
+      specs:["필름 타입 스머지프루프 코팅","컬 고정 폴리머로 하루종일 컬 유지","미온수 클렌징 용이(제거 스트레스↓)"],
+      colors:["딥 블랙","브라운 블랙"],
+      cost:2400, odm:"코스맥스 / 코스메카코리아",
+      diff:"최다 불만 <b>번짐·떡짐·제거</b> 3종을 필름 제형으로 동시 해결",
+      score:84}
+  }
+};
+
+/* 시장별 보정 */
+const MARKET = {
+  "국내":{note:"국내 트렌드·발색 중심 수요", kw:[], spec:null},
+  "북미":{note:"장시간·워터프루프, 폭넓은 언더톤 니즈", kw:["#워터프루프","#롱웨어","#언더톤다양성"],
+          spec:"북미 대응: 워터프루프 강화 + 언더톤(쿨/웜/뉴트럴) 확장"},
+  "일본":{note:"자연스러움·수분감·저자극 선호", kw:["#저자극","#수분","#내추럴"],
+          spec:"일본 대응: 저자극 성분 + 자연스러운 수분 마무리"}
+};
+
+const PRICE_BANDS=[[8000,10000],[10000,15000],[15000,20000],[20000,30000]];
+const PRICE_LABELS=["~1만원","1~1.5만원","1.5~2만원","2~3만원"];
+
+const CHANNELS=[
+  ["올리브영","랭킹 · 신상품 · 리뷰 · 가격","국내 트렌드 핵심"],
+  ["쿠팡","판매 인기 · 리뷰수 · 가격","대중 판매성 확인"],
+  ["네이버쇼핑","브랜드 · 가격비교 · 리뷰","시장 폭 확인"],
+  ["화해","리뷰 · 성분 · 피부반응","VOC 분석 핵심"],
+  ["Amazon","글로벌 랭킹 · 리뷰 · 가격","북미시장 분석"],
+  ["Qoo10 / @cosme","일본 인기 · 리뷰 · K-Beauty","일본시장 분석"]
+];
+
+/* ---------- 2. 초기 렌더 ---------- */
+let DATA = DEMO;
+const $ = s => document.querySelector(s);
+const el = (t,c)=>{const e=document.createElement(t); if(c)e.className=c; return e;};
+
+function initSelectors(){
+  const cat=$("#cat"); cat.innerHTML="";
+  Object.keys(DATA).forEach(k=>{const o=el("option"); o.value=k; o.textContent=k; cat.appendChild(o);});
+}
+function renderChannels(){
+  const g=$("#channels"); g.innerHTML="";
+  CHANNELS.forEach(c=>{
+    const d=el("div","chan"); d.dataset.name=c[0];
+    d.innerHTML=`<p class="cn"><span class="dot"></span>${c[0]}</p><p class="cd">${c[1]}</p><p class="cr">${c[2]}</p>`;
+    g.appendChild(d);
+  });
+}
+
+/* ---------- 3. 분석 실행 ---------- */
+const PIPE=[["🔎","데이터 수집","6개 채널 크롤링·API"],["🧠","AI 분석","시장성·VOC 해석"],["✨","신제품 제안","요구사양 생성"]];
+let running=false;
+
+function runAnalysis(){
+  if(running) return; running=true;
+  const btn=$("#run"); btn.disabled=true; btn.textContent="AX 분석 실행 중…";
+  const res=$("#results"); res.classList.remove("show");
+  document.querySelectorAll(".chan").forEach(c=>c.classList.remove("active"));
+
+  // pipeline UI
+  const pipe=$("#pipe"); pipe.innerHTML="";
+  PIPE.forEach(p=>{const s=el("div","step");
+    s.innerHTML=`<div class="ic">${p[0]}</div><div><b>${p[1]}</b><small>${p[2]}</small></div>`; pipe.appendChild(s);});
+
+  res.classList.add("show");
+  res.scrollIntoView({behavior:"smooth",block:"start"});
+
+  const chans=[...document.querySelectorAll(".chan")];
+  const steps=[...document.querySelectorAll(".step")];
+
+  // 채널 순차 활성화
+  chans.forEach((c,i)=>setTimeout(()=>c.classList.add("active"), 180*i));
+  // 파이프라인 단계
+  setTimeout(()=>steps[0].classList.add("done"), 200);
+  setTimeout(()=>steps[1].classList.add("done"), 1100);
+  setTimeout(()=>{ steps[2].classList.add("done"); renderResults(); finish(btn); }, 1900);
+}
+function finish(btn){ btn.disabled=false; btn.textContent="AX 분석 실행"; running=false; }
+
+function renderResults(){
+  const cat=$("#cat").value, mkt=$("#mkt").value, pb=+$("#price").value;
+  const d=DATA[cat]; const m=MARKET[mkt];
+
+  // ① 시장성
+  const mk=$("#market"); mk.innerHTML="";
+  const max=Math.max(...d.top.map(t=>t[1]));
+  d.top.forEach(t=>{
+    const b=el("div","bar");
+    b.innerHTML=`<span class="nm">${t[0]}</span><span class="track"><span class="fill"></span></span>
+      <span class="vl">${t[2].toLocaleString()}원 · ★${t[3]}</span>`;
+    mk.appendChild(b);
+    requestAnimationFrame(()=>{ b.querySelector(".fill").style.width=(t[1]/max*100)+"%"; });
+  });
+  const pd=$("#pricedist"); pd.innerHTML="";
+  const hiIdx=d.price.reduce((a,c,i,arr)=>c[1]>arr[a][1]?i:a,0);
+  d.price.forEach((p,i)=>{const x=el("div","pb"+(i===hiIdx?" hi":""));
+    x.innerHTML=`<b>${p[1]}%</b><small>${p[0]}</small>`; pd.appendChild(x);});
+
+  // ② VOC
+  const love=$("#love"); love.innerHTML=""; d.love.forEach(t=>{const li=el("li"); li.textContent=t; love.appendChild(li);});
+  const hate=$("#hate"); hate.innerHTML=""; d.hate.forEach(t=>{const li=el("li"); li.textContent=t; hate.appendChild(li);});
+  const tags=$("#tags"); tags.innerHTML="";
+  d.keywords.concat(m.kw).forEach(t=>{const s=el("span"); s.textContent=t; tags.appendChild(s);});
+
+  // ③ AI 제안
+  const p=d.proposal;
+  $("#concept").textContent=p.concept;
+  const specs=$("#specs"); specs.innerHTML="";
+  const specList=m.spec? p.specs.concat(m.spec): p.specs;
+  specList.forEach(t=>{const li=el("li"); li.textContent=t; specs.appendChild(li);});
+  const colors=$("#colors"); colors.innerHTML="";
+  p.colors.forEach(c=>{const s=el("span"); s.textContent=c; colors.appendChild(s);});
+
+  // 가격/원가
+  const band=PRICE_BANDS[pb]; const msrp=Math.round((band[0]+band[1])/2/100)*100;
+  const rate=Math.round(p.cost/msrp*100);
+  const kv=$("#kv");
+  kv.innerHTML=`
+    <div class="box"><small>예상 원가</small><b>${p.cost.toLocaleString()}원</b></div>
+    <div class="box"><small>목표 소비자가</small><b>${msrp.toLocaleString()}원</b></div>
+    <div class="box"><small>원가율</small><b>${rate}%</b></div>
+    <div class="box"><small>추천 ODM</small><b style="font-size:13px">${p.odm}</b></div>`;
+
+  $("#diff").innerHTML=`<b>차별화 포인트 · </b>${p.diff}`;
+  $("#mfg").innerHTML=`<span class="ic">◈</span><span><b>제조 가능성 판단:</b> ${p.odm} 기준 양산 가능 · ${m.note} · 원가율 ${rate}%로 목표 마진 확보 ${rate<=20?"양호":"검토 필요"}</span>`;
+
+  // 점수 ring
+  animateScore(p.score);
+}
+
+function animateScore(score){
+  const ring=$("#ringfill"), txt=$("#scoretxt"); const C=220;
+  let cur=0; const target=score;
+  const step=()=>{ cur+=Math.max(1,Math.round((target-cur)/6));
+    if(cur>=target) cur=target;
+    ring.style.strokeDashoffset = C - C*(cur/100);
+    txt.textContent=cur;
+    if(cur<target) requestAnimationFrame(step);
+  };
+  ring.style.strokeDashoffset=C; requestAnimationFrame(step);
+}
+
+/* ---------- 4. 실데이터(data.json) 우선 로드 ---------- */
+async function boot(){
+  try{
+    const r=await fetch("data.json",{cache:"no-store"});
+    if(r.ok){ const j=await r.json(); if(j && Object.keys(j).length){ DATA=j; } }
+  }catch(e){ /* 없으면 데모 사용 */ }
+  initSelectors(); renderChannels();
+  $("#run").addEventListener("click", runAnalysis);
+}
+boot();
+</script>
+</body>
+</html>
