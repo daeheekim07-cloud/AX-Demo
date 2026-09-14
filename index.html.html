@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>색조 신제품 AX 분석 시스템</title>
+<style>
+  :root{
+    --bg:#1b1013; --bg2:#241519; --card:#2b1a20; --card2:#341f27; --line:#4a323a;
+    --berry:#6D2E46; --rose:#A4596B; --rose-soft:#C98B97; --gold:#BD8A3D; --gold-soft:#dab26b;
+    --text:#F3E7EB; --muted:#B79AA3; --ok:#6BBF8A;
+    --radius:16px; --shadow:0 8px 28px rgba(0,0,0,.35);
+    --font:'Pretendard','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Malgun Gothic','맑은 고딕',sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:radial-gradient(120% 80% at 80% -10%,#3a1d2a 0%,var(--bg) 55%);
+    color:var(--text);font-family:var(--font);line-height:1.5;padding:0 0 60px}
+  .wrap{max-width:960px;margin:0 auto;padding:22px 16px}
+  .swatch{display:inline-flex;gap:6px;vertical-align:middle}
+  .swatch i{width:12px;height:12px;border-radius:50%;display:inline-block}
+  header h1{font-size:26px;font-weight:800;margin:0 0 4px;letter-spacing:-.02em}
+  header .eyebrow{font-size:12px;font-weight:700;letter-spacing:.22em;color:var(--rose-soft);margin:0 0 10px}
+  header p.sub{color:var(--muted);margin:8px 0 0;font-size:14px}
+  .panel{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin-top:18px;box-shadow:var(--shadow)}
+  .panel h2{font-size:13px;font-weight:800;letter-spacing:.12em;color:var(--rose-soft);
+    margin:0 0 14px;text-transform:uppercase}
+  label.fld{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+  label.fld:first-of-type{margin-top:0}
+  select{width:100%;appearance:none;background:var(--card);color:var(--text);border:1px solid var(--line);
+    border-radius:12px;padding:15px 44px 15px 16px;font-size:16px;font-family:inherit;font-weight:600;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23C98B97' stroke-width='2'><path d='M6 8l4 4 4-4'/><path d='M6 12l4-4 4 4'/></svg>");
+    background-repeat:no-repeat;background-position:right 14px center}
+  select:focus{outline:2px solid var(--gold);outline-offset:1px}
+  .runbtn{width:100%;margin-top:20px;border:0;border-radius:13px;padding:17px;font-size:17px;font-weight:800;
+    font-family:inherit;color:#2a1206;cursor:pointer;background:linear-gradient(180deg,var(--gold-soft),var(--gold));
+    box-shadow:0 6px 18px rgba(189,138,61,.35);transition:transform .1s,filter .15s}
+  .runbtn:hover{filter:brightness(1.05)} .runbtn:active{transform:scale(.985)}
+  .runbtn[disabled]{opacity:.6;cursor:progress}
+  .chan-title{margin:26px 2px 12px;font-size:20px;font-weight:800}
+  .grid{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:620px){.grid{grid-template-columns:1fr 1fr}}
+  .chan{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;
+    transition:border-color .3s,background .3s,transform .3s;position:relative}
+  .chan .cn{font-size:17px;font-weight:800;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+  .chan .cn .dot{width:9px;height:9px;border-radius:50%;background:var(--line);transition:.3s}
+  .chan .cd{font-size:13px;color:var(--rose-soft);margin:0 0 8px}
+  .chan .badge{position:absolute;top:14px;right:14px;font-size:10.5px;font-weight:700;
+    padding:3px 9px;border-radius:20px}
+  .chan .badge.on{background:rgba(107,191,138,.16);color:var(--ok);border:1px solid rgba(107,191,138,.5)}
+  .chan .badge.soon{background:var(--card2);color:var(--muted);border:1px solid var(--line)}
+  .chan.live{border-color:var(--ok);background:var(--card2)}
+  .chan.live .dot{background:var(--ok);box-shadow:0 0 0 4px rgba(107,191,138,.18)}
+  .chan.active{border-color:var(--gold);transform:translateY(-2px)}
+  .chan.active .dot{background:var(--gold);box-shadow:0 0 0 4px rgba(189,138,61,.2)}
+  #results{margin-top:26px;display:none}
+  #results.show{display:block;animation:fade .5s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .pipe{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  .step{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px;display:flex;align-items:center;gap:11px;transition:.3s;opacity:.5}
+  .step .ic{width:30px;height:30px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;
+    background:var(--berry);font-size:15px}
+  .step b{display:block;font-size:14px} .step small{color:var(--muted);font-size:11.5px}
+  .step.done{opacity:1;border-color:var(--rose)}
+  .step.done .ic{background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#2a1206}
+  .cardgrid{display:grid;grid-template-columns:1fr;gap:16px}
+  @media(min-width:720px){.cardgrid{grid-template-columns:1fr 1fr}}
+  .rc{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+  .rc h3{margin:0 0 14px;font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .rc h3 .tag{font-size:11px;color:var(--muted);font-weight:600}
+  .bar{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+  .bar .nm{flex:0 0 52%;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar .track{flex:1;height:9px;background:var(--card);border-radius:6px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--berry),var(--rose));width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+  .bar .vl{flex:0 0 auto;color:var(--muted);font-size:11.5px;min-width:96px;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .statgrid .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .statgrid .box small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}
+  .statgrid .box b{font-size:19px}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .tags span{background:var(--card);border:1px solid var(--line);color:var(--rose-soft);
+    padding:7px 12px;border-radius:20px;font-size:12.5px;font-weight:600}
+  .hero{margin-top:16px;background:linear-gradient(155deg,#33202a,#241519);
+    border:1.5px solid var(--gold);border-radius:20px;padding:22px;box-shadow:0 10px 34px rgba(0,0,0,.45)}
+  .hero .htop{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  .hero .kick{font-size:11px;letter-spacing:.2em;color:var(--gold-soft);font-weight:800;margin:0 0 6px}
+  .hero .concept{font-size:21px;font-weight:800;margin:0;letter-spacing:-.01em;max-width:560px}
+  .ring{flex:0 0 auto;text-align:center}
+  .ring svg{transform:rotate(-90deg)} .ring .lbl{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .hero .sec{margin-top:16px}
+  .hero .sec .st{font-size:12px;font-weight:800;color:var(--rose-soft);letter-spacing:.08em;margin:0 0 7px}
+  .hero ul.spec{margin:0;padding:0;list-style:none}
+  .hero ul.spec li{font-size:13.5px;padding:5px 0 5px 20px;position:relative}
+  .hero ul.spec li::before{content:"\25C6";position:absolute;left:0;color:var(--gold);font-size:10px;top:7px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chips span{background:rgba(164,89,107,.22);border:1px solid var(--rose);border-radius:8px;
+    padding:6px 11px;font-size:12.5px;font-weight:600;color:var(--text)}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+  @media(min-width:560px){.kv{grid-template-columns:repeat(4,1fr)}}
+  .kv .box{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:12px}
+  .kv .box small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}
+  .kv .box b{font-size:17px}
+  .diff{margin-top:16px;background:rgba(189,138,61,.1);border-left:3px solid var(--gold);
+    border-radius:8px;padding:12px 14px;font-size:13px} .diff b{color:var(--gold-soft)}
+  .mfg{margin-top:12px;font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:flex-start}
+  footer{max-width:960px;margin:30px auto 0;padding:0 16px;color:var(--muted);font-size:11.5px;text-align:center;line-height:1.7}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">COLOR COSMETICS · AX SYSTEM</p>
+    <h1>색조 신제품 AX 분석 시스템</h1>
+    <div class="swatch" style="margin-top:8px">
+      <i style="background:#6D2E46"></i><i style="background:#A4596B"></i>
+      <i style="background:#BD8A3D"></i><i style="background:#C98B97"></i>
+    </div>
+    <p class="sub">색조 카테고리별 시장·제품 데이터를 기반으로 경쟁 구조를 분석하고 신제품 요구사양을 제안합니다.</p>
+  </header>
+
+  <section class="panel" aria-label="분석 조건">
+    <h2>분석 조건 · 색조 전용</h2>
+    <label class="fld" for="cat">제품군</label>
+    <select id="cat"></select>
+    <label class="fld" for="mkt">타깃 시장</label>
+    <select id="mkt">
+      <option value="국내">국내</option>
+      <option value="북미">북미 (Amazon)</option>
+      <option value="일본">일본 (Qoo10 / @cosme)</option>
+    </select>
+    <label class="fld" for="price">목표 가격대</label>
+    <select id="price">
+      <option value="0">~ 10,000원</option>
+      <option value="1">10,000 ~ 15,000원</option>
+      <option value="2" selected>15,000 ~ 20,000원</option>
+      <option value="3">20,000 ~ 30,000원</option>
+    </select>
+    <button class="runbtn" id="run">AX 분석 실행</button>
+  </section>
+
+  <h2 class="chan-title">데이터 수집 채널</h2>
+  <div class="grid" id="channels"></div>
+
+  <section id="results" aria-live="polite">
+    <div class="pipe" id="pipe"></div>
+    <div class="cardgrid">
+      <div class="rc">
+        <h3>① 색조 제품 벤치마크 <span class="tag">카테고리별 대표 제품</span></h3>
+        <div id="products"></div>
+      </div>
+      <div class="rc">
+        <h3>② 시장 구조 분석 <span class="tag">브랜드 · 경쟁 강도</span></h3>
+        <div class="statgrid" id="stats"></div>
+        <div style="font-size:12px;color:var(--muted);margin:4px 0 8px">상위 진입 업체 (보고 건수)</div>
+        <div id="brands"></div>
+        <div style="font-size:12px;color:var(--muted);margin:14px 0 8px">키워드</div>
+        <div class="tags" id="tags"></div>
+      </div>
+    </div>
+
+    <div class="hero" id="hero">
+      <div class="htop">
+        <div>
+          <p class="kick">③ AI 신제품 요구사양 제안</p>
+          <p class="concept" id="concept"></p>
+        </div>
+        <div class="ring">
+          <svg width="82" height="82" viewBox="0 0 82 82">
+            <circle cx="41" cy="41" r="35" fill="none" stroke="#4a323a" stroke-width="8"/>
+            <circle id="ringfill" cx="41" cy="41" r="35" fill="none" stroke="#BD8A3D" stroke-width="8"
+              stroke-linecap="round" stroke-dasharray="220" stroke-dashoffset="220"/>
+            <text x="41" y="41" transform="rotate(90 41 41)" text-anchor="middle" dominant-baseline="central"
+              fill="#F3E7EB" font-size="20" font-weight="800" id="scoretxt">0</text>
+          </svg>
+          <div class="lbl">예상 경쟁력</div>
+        </div>
+      </div>
+      <div class="sec"><p class="st">핵심 요구사양</p><ul class="spec" id="specs"></ul></div>
+      <div class="sec"><p class="st">추천 컬러 구성</p><div class="chips" id="colors"></div></div>
+      <div class="kv" id="kv"></div>
+      <div class="diff" id="diff"></div>
+      <div class="mfg" id="mfg"></div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  색조 신제품 AX 분석 시스템 · 색조 전용 시연 데이터셋<br>
+  외부 data.json 우선 로드 · 실패 시 내장 데이터로 자동 실행
+</footer>
+
+<script>
+const DATA_DEFAULT = {"립틴트":{"stats":{"보고건수":1280,"업체수":214,"상위3사비중":18,"경쟁강도":"매우 치열"},"상위업체":[["롬앤",82],["페리페라",71],["클리오",54],["에뛰드",43],["3CE",39]],"최근제품":[["쥬시 래스팅 틴트","롬앤"],["잉크 무드 글로이 틴트","페리페라"],["크리스탈 글램 틴트","클리오"],["픽싱 틴트","에뛰드"],["블러 워터 틴트","3CE"],["듀이풀 워터 틴트","롬앤"]],"keywords":["#롱래스팅","#워터글로우","#MLBB","#저자극","#고발색"],"proposal":{"concept":"광택 지속형 워터 글로우 립틴트","specs":["한 번의 터치로 선명한 발색","끈적임을 줄인 수분 광택막","착색 지속력 및 묻어남 최소화"],"colors":["로지베이지","피그로즈","칠리브릭","쿨베리","코랄피치"],"cost":1850,"odm":"코스맥스 / 씨앤씨인터내셔널","diff":"글로우와 착색 지속력을 동시에 강화하고, 웜·쿨 핵심 컬러를 균형 있게 구성.","score":91}},"립스틱":{"stats":{"보고건수":860,"업체수":172,"상위3사비중":21,"경쟁강도":"치열"},"상위업체":[["맥",61],["3CE",48],["헤라",43],["롬앤",39],["에스쁘아",34]],"최근제품":[["파우더 키스 립스틱","MAC"],["무드 레시피 매트 립 컬러","3CE"],["센슈얼 파우더 매트 립스틱","헤라"],["제로 매트 립스틱","롬앤"],["노웨어 립스틱","에스쁘아"]],"keywords":["#소프트매트","#블러링","#고밀착","#MLBB","#프리미엄"],"proposal":{"concept":"소프트 블러 매트 립스틱","specs":["파우더리한 소프트 매트 마무리","입술 주름 부각 최소화","한 번에 균일한 고발색"],"colors":["누드베이지","로즈우드","브릭레드","뮤트핑크","플럼"],"cost":2300,"odm":"코스맥스 / 한국콜마","diff":"매트 제형의 건조감을 낮추고 블러링 효과를 강화한 데일리 프리미엄 포지션.","score":86}},"쿠션/파운데이션":{"stats":{"보고건수":1540,"업체수":238,"상위3사비중":24,"경쟁강도":"매우 치열"},"상위업체":[["클리오",88],["헤라",76],["정샘물",61],["에스쁘아",55],["웨이크메이크",49]],"최근제품":[["킬커버 파운웨어 쿠션","클리오"],["블랙 쿠션","헤라"],["에센셜 스킨 누더 쿠션","정샘물"],["비벨벳 커버 쿠션","에스쁘아"],["워터 벨벳 쿠션","웨이크메이크"]],"keywords":["#세미매트","#지속력","#얇은밀착","#모공커버","#다양한쉐이드"],"proposal":{"concept":"24H 세미매트 스킨핏 쿠션","specs":["얇고 균일한 밀착","모공·홍조 자연 커버","다크닝 및 들뜸 최소화"],"colors":["17C","19N","21C","21N","23N","25N"],"cost":4200,"odm":"코스맥스 / 인터코스코리아","diff":"얇은 밀착과 커버력을 동시에 확보하고 6개 톤으로 국내·글로벌 확장성 확보.","score":94}},"블러셔":{"stats":{"보고건수":620,"업체수":146,"상위3사비중":19,"경쟁강도":"치열"},"상위업체":[["롬앤",46],["페리페라",41],["3CE",37],["클리오",34],["투쿨포스쿨",30]],"최근제품":[["베러 댄 치크","롬앤"],["퓨어 블러쉬드 선샤인 치크","페리페라"],["페이스 블러쉬","3CE"],["에센셜 립치크 탭","클리오"],["아트클래스 바이 로댕 블러셔","투쿨포스쿨"]],"keywords":["#맑은발색","#레이어링","#뮤트톤","#크림블러셔","#지속력"],"proposal":{"concept":"투명 레이어링 소프트 블러셔","specs":["뭉침 없는 미세 파우더","한 겹씩 쌓이는 투명 발색","모공 부각을 줄인 블러 피니시"],"colors":["피치누드","라벤더핑크","로즈베이지","살구코랄","뮤트모브"],"cost":1650,"odm":"코스맥스 / 씨앤씨인터내셔널","diff":"과발색 부담을 줄이고 피부톤별 레이어링이 쉬운 데일리 치크로 포지셔닝.","score":89}},"아이섀도우":{"stats":{"보고건수":980,"업체수":191,"상위3사비중":17,"경쟁강도":"매우 치열"},"상위업체":[["클리오",69],["롬앤",58],["3CE",54],["데이지크",47],["에뛰드",42]],"최근제품":[["프로 아이 팔레트","클리오"],["베러 댄 팔레트","롬앤"],["멀티 아이 컬러 팔레트","3CE"],["섀도우 팔레트","데이지크"],["플레이 컬러 아이즈","에뛰드"]],"keywords":["#멀티팔레트","#저채도","#펄포인트","#데일리","#발색지속"],"proposal":{"concept":"톤온톤 8구 데일리 아이 팔레트","specs":["베이스·음영·포인트의 완결 구성","가루날림 최소화","매트·쉬머·글리터 혼합"],"colors":["웜누드","로즈브라운","뮤트모브","코랄브릭"],"cost":3600,"odm":"코스맥스 / 코스메카코리아","diff":"한 팔레트로 데일리부터 포인트 메이크업까지 가능한 톤온톤 구성.","score":90}},"마스카라":{"stats":{"보고건수":510,"업체수":118,"상위3사비중":23,"경쟁강도":"치열"},"상위업체":[["에뛰드",39],["클리오",36],["페리페라",31],["키스미",29],["롬앤",25]],"최근제품":[["컬픽스 마스카라","에뛰드"],["킬래쉬 수퍼프루프 마스카라","클리오"],["잉크 블랙 카라","페리페라"],["히로인메이크 마스카라","키스미"],["한올 픽스 마스카라","롬앤"]],"keywords":["#컬링","#워터프루프","#번짐방지","#롱래쉬","#슬림브러시"],"proposal":{"concept":"초경량 픽싱 롱래쉬 마스카라","specs":["컬링 고정력 강화","유분·수분 번짐 최소화","뭉침 없는 슬림 브러시"],"colors":["딥블랙","애쉬브라운"],"cost":1700,"odm":"코스맥스 / 한국콜마","diff":"국내는 자연스러운 롱래쉬, 북미·일본은 워터프루프 성능 중심으로 확장 가능.","score":88}},"아이라이너":{"stats":{"보고건수":430,"업체수":103,"상위3사비중":25,"경쟁강도":"치열"},"상위업체":[["클리오",34],["머지",29],["키스미",26],["웨이크메이크",23],["에뛰드",21]],"최근제품":[["샤프 쏘 심플 워터프루프 펜슬라이너","클리오"],["더 퍼스트 펜 아이라이너","머지"],["히로인메이크 스무스 리퀴드 아이라이너","키스미"],["리얼 애쉬 펜슬 라이너","웨이크메이크"],["오 마이 라인","에뛰드"]],"keywords":["#슬림심","#워터프루프","#번짐방지","#애쉬브라운","#정교함"],"proposal":{"concept":"1.5mm 초슬림 젤 펜슬 라이너","specs":["부드러운 초슬림 심","빠른 픽싱과 번짐 방지","점막 사용이 쉬운 저자극 설계"],"colors":["리얼블랙","딥브라운","애쉬브라운"],"cost":1450,"odm":"씨앤씨인터내셔널 / 코스맥스","diff":"정교한 라인 표현과 빠른 픽싱을 결합해 초보자도 사용하기 쉬운 사양.","score":87}},"아이브로우":{"stats":{"보고건수":390,"업체수":97,"상위3사비중":22,"경쟁강도":"치열"},"상위업체":[["에뛰드",31],["클리오",28],["이니스프리",24],["웨이크메이크",22],["페리페라",18]],"최근제품":[["드로잉 아이브로우","에뛰드"],["킬브로우 오토 하드 브로우 펜슬","클리오"],["오토 아이브로우 펜슬","이니스프리"],["내추럴 하드 브로우 펜슬","웨이크메이크"],["스피디 스키니 브로우","페리페라"]],"keywords":["#내추럴브로우","#하드포뮬러","#초슬림","#애쉬컬러","#지속력"],"proposal":{"concept":"내추럴 헤어라인 초슬림 브로우","specs":["한 올씩 그리는 1mm 심","유분에 강한 지속력","모발색과 자연스럽게 맞는 애쉬 컬러"],"colors":["애쉬브라운","내추럴브라운","그레이브라운","토프"],"cost":1250,"odm":"코스맥스 / 씨앤씨인터내셔널","diff":"모발 컬러와의 조화를 강화한 저채도 애쉬 계열 중심 구성.","score":85}},"컨실러":{"stats":{"보고건수":470,"업체수":109,"상위3사비중":20,"경쟁강도":"치열"},"상위업체":[["더샘",36],["루나",31],["클리오",27],["웨이크메이크",23],["에스쁘아",20]],"최근제품":[["커버 퍼펙션 팁 컨실러","더샘"],["롱래스팅 팁 컨실러","루나"],["킬커버 에어리핏 컨실러","클리오"],["디파이닝 커버 컨실러","웨이크메이크"],["프로 테일러 비 실크 컨실러","에스쁘아"]],"keywords":["#고커버","#얇은밀착","#다크닝방지","#국소커버","#톤보정"],"proposal":{"concept":"씬핏 멀티 커버 컨실러","specs":["얇게 밀착되는 고커버 제형","주름 끼임과 다크닝 최소화","잡티·다크서클 모두 대응"],"colors":["라이트베이지","아이보리","내추럴베이지","피치코렉터","그린코렉터"],"cost":1550,"odm":"한국콜마 / 코스맥스","diff":"커버와 코렉팅 기능을 함께 구성해 단일 SKU군으로 활용도를 높임.","score":88}}};
+
+const CHANNELS=[
+  ["색조 통합 데이터","카테고리 · 제품 · 브랜드 · 경쟁강도","연동 완료",true],
+  ["올리브영","랭킹 · 리뷰 · 가격","확장 예정",false],
+  ["쿠팡","판매 인기 · 리뷰수 · 가격","확장 예정",false],
+  ["화해","리뷰 · 성분 · 피부반응","확장 예정",false],
+  ["Amazon","글로벌 랭킹 · 리뷰 · 가격","확장 예정",false],
+  ["Qoo10 / @cosme","일본 인기 · 리뷰 · K-Beauty","확장 예정",false]
+];
+const PRICE_BANDS=[[8000,10000],[10000,15000],[15000,20000],[20000,30000]];
+const MARKET={
+  "국내":{note:"국내 트렌드·발색 중심 수요",spec:null},
+  "북미":{note:"장시간·워터프루프, 폭넓은 언더톤",spec:"북미 대응: 워터프루프 강화 + 언더톤 확장"},
+  "일본":{note:"자연스러움·수분감·저자극 선호",spec:"일본 대응: 저자극 성분 + 자연 수분 마무리"}
+};
+
+let DATA = DATA_DEFAULT;
+const $=s=>document.querySelector(s);
+const el=(t,c)=>{const e=document.createElement(t); if(c)e.className=c; return e;};
+
+function initSelectors(){
+  const cat=$("#cat"); cat.innerHTML="";
+  Object.keys(DATA).forEach(k=>{const o=el("option"); o.value=k; o.textContent=k; cat.appendChild(o);});
+}
+function renderChannels(){
+  const g=$("#channels"); g.innerHTML="";
+  CHANNELS.forEach(c=>{
+    const d=el("div","chan"+(c[3]?" live":"")); d.dataset.live=c[3];
+    d.innerHTML=`<p class="cn"><span class="dot"></span>${c[0]}</p><p class="cd">${c[1]}</p>
+      <span class="badge ${c[3]?"on":"soon"}">${c[2]}</span>`;
+    g.appendChild(d);
+  });
+}
+const PIPE=[["\uD83D\uDCE1","색조 데이터 수집","제품·브랜드 매핑"],
+            ["\uD83E\uDDE0","시장 구조 분석","진입 업체·경쟁강도"],
+            ["\u2728","신제품 제안 생성","요구사양 도출"]];
+let running=false;
+function runAnalysis(){
+  if(running) return; running=true;
+  const btn=$("#run"); btn.disabled=true; btn.textContent="AX 분석 실행 중…";
+  const res=$("#results"); res.classList.remove("show");
+  document.querySelectorAll(".chan").forEach(c=>c.classList.remove("active"));
+  const pipe=$("#pipe"); pipe.innerHTML="";
+  PIPE.forEach(p=>{const s=el("div","step");
+    s.innerHTML=`<div class="ic">${p[0]}</div><div><b>${p[1]}</b><small>${p[2]}</small></div>`; pipe.appendChild(s);});
+  res.classList.add("show"); res.scrollIntoView({behavior:"smooth",block:"start"});
+  const chans=[...document.querySelectorAll(".chan")];
+  const steps=[...document.querySelectorAll(".step")];
+  chans.forEach((c,i)=>setTimeout(()=>{ if(c.dataset.live==="true") c.classList.add("active"); }, 180*i));
+  setTimeout(()=>steps[0].classList.add("done"),200);
+  setTimeout(()=>steps[1].classList.add("done"),1100);
+  setTimeout(()=>{ steps[2].classList.add("done"); renderResults(); finish(btn); },1900);
+}
+function finish(btn){ btn.disabled=false; btn.textContent="AX 분석 실행"; running=false; }
+
+function renderResults(){
+  const cat=$("#cat").value, mkt=$("#mkt").value, pb=+$("#price").value;
+  const d=DATA[cat]; const m=MARKET[mkt];
+
+  // ① 보고 품목
+  const pr=$("#products"); pr.innerHTML="";
+  (d["최근제품"]||[]).forEach((t,i)=>{
+    const b=el("div","bar");
+    b.innerHTML=`<span class="nm">${t[0]}</span><span class="track"><span class="fill"></span></span>
+      <span class="vl">${t[1]||""}</span>`;
+    pr.appendChild(b);
+    requestAnimationFrame(()=>{ b.querySelector(".fill").style.width=(100-i*9)+"%"; });
+  });
+
+  // ② 시장 구조
+  const st=d.stats||{};
+  $("#stats").innerHTML=`
+    <div class="box"><small>분석 데이터 수</small><b>${(st["보고건수"]||0).toLocaleString()}</b></div>
+    <div class="box"><small>분석 브랜드 수</small><b>${(st["업체수"]||0).toLocaleString()}</b></div>
+    <div class="box"><small>상위 3사 비중</small><b>${st["상위3사비중"]||0}%</b></div>
+    <div class="box"><small>경쟁 강도</small><b style="font-size:14px">${st["경쟁강도"]||"-"}</b></div>`;
+  const bd=$("#brands"); bd.innerHTML="";
+  const bmax=Math.max(1,...(d["상위업체"]||[]).map(x=>x[1]));
+  (d["상위업체"]||[]).forEach(x=>{
+    const b=el("div","bar");
+    b.innerHTML=`<span class="nm">${x[0]}</span><span class="track"><span class="fill"></span></span>
+      <span class="vl">${x[1].toLocaleString()}</span>`;
+    bd.appendChild(b);
+    requestAnimationFrame(()=>{ b.querySelector(".fill").style.width=(x[1]/bmax*100)+"%"; });
+  });
+  const tags=$("#tags"); tags.innerHTML="";
+  (d.keywords||[]).forEach(t=>{const s=el("span"); s.textContent=t; tags.appendChild(s);});
+
+  // ③ 제안
+  const p=d.proposal;
+  $("#concept").textContent=p.concept;
+  const specs=$("#specs"); specs.innerHTML="";
+  const list=m.spec? p.specs.concat(m.spec): p.specs;
+  list.forEach(t=>{const li=el("li"); li.textContent=t; specs.appendChild(li);});
+  const colors=$("#colors"); colors.innerHTML="";
+  p.colors.forEach(c=>{const s=el("span"); s.textContent=c; colors.appendChild(s);});
+  const band=PRICE_BANDS[pb]; const msrp=Math.round((band[0]+band[1])/2/100)*100;
+  const rate=Math.round(p.cost/msrp*100);
+  $("#kv").innerHTML=`
+    <div class="box"><small>예상 원가</small><b>${p.cost.toLocaleString()}원</b></div>
+    <div class="box"><small>목표 소비자가</small><b>${msrp.toLocaleString()}원</b></div>
+    <div class="box"><small>예상 원가율</small><b>${rate}%</b></div>
+    <div class="box"><small>추천 ODM</small><b style="font-size:13px">${p.odm}</b></div>`;
+  $("#diff").innerHTML=`<b>차별화 포인트 · </b>${p.diff}`;
+  $("#mfg").innerHTML=`<span style="color:var(--rose-soft)">\u25C8</span><span><b>제조 가능성:</b> ${p.odm} 기준 양산 가능 · ${m.note} · 예상 원가율 ${rate}%</span>`;
+  animateScore(p.score);
+}
+function animateScore(score){
+  const ring=$("#ringfill"), txt=$("#scoretxt"); const C=220; let cur=0;
+  const step=()=>{ cur+=Math.max(1,Math.round((score-cur)/6)); if(cur>=score) cur=score;
+    ring.style.strokeDashoffset=C-C*(cur/100); txt.textContent=cur;
+    if(cur<score) requestAnimationFrame(step); };
+  ring.style.strokeDashoffset=C; requestAnimationFrame(step);
+}
+async function boot(){
+  try{
+    const r=await fetch("data.json",{cache:"no-store"});
+    if(r.ok){ const j=await r.json(); if(j && Object.keys(j).length) DATA=j; }
+  }catch(e){}
+  initSelectors(); renderChannels();
+  $("#run").addEventListener("click", runAnalysis);
+}
+boot();
+</script>
+</body>
+</html>
